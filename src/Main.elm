@@ -112,7 +112,7 @@ update msg model =
 
     IncrementPoints _ ->
       if PlayerStatus.isPlaying model.playerStatus then
-        ({model | points = model.points + 1}, Cmd.none)
+        ({model | points = model.points + (abs model.ball.speedX)}, Cmd.none)
       else
         (model, Cmd.none)
 

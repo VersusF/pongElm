@@ -4467,7 +4467,7 @@ var author$project$Bouncer$initialBouncer = function (square) {
 };
 var author$project$Main$Model = F5(
 	function (ball, square, bouncer, playerStatus, points) {
-		return {C: ball, u: bouncer, q: playerStatus, F: points, z: square};
+		return {u: ball, v: bouncer, q: playerStatus, F: points, A: square};
 	});
 var author$project$PlayerStatus$NotYetStarted = 2;
 var author$project$PlayerStatus$initialPlayerStatus = 2;
@@ -5470,6 +5470,9 @@ var author$project$PlayerStatus$isPlaying = function (playerStatus) {
 	return !playerStatus;
 };
 var author$project$PlayerStatus$startGame = 0;
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
 var elm$core$Basics$round = _Basics_round;
 var elm$random$Random$Generate = elm$core$Basics$identity;
 var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
@@ -5602,7 +5605,7 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							C: author$project$Ball$randomBall(x)
+							u: author$project$Ball$randomBall(x)
 						}),
 					elm$core$Platform$Cmd$none);
 			case 4:
@@ -5613,30 +5616,32 @@ var author$project$Main$update = F2(
 					A2(
 						elm$random$Random$generate,
 						author$project$Main$CreateBall,
-						A2(elm$random$Random$int, 0, model.z.aB)));
+						A2(elm$random$Random$int, 0, model.A.aB)));
 			case 3:
 				return author$project$PlayerStatus$isPlaying(model.q) ? _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{F: model.F + 1}),
+						{
+							F: model.F + elm$core$Basics$abs(model.u.U)
+						}),
 					elm$core$Platform$Cmd$none) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 			case 1:
-				var _n1 = A4(author$project$Ball$updateBall, model.C, model.z, model.u, model.q);
+				var _n1 = A4(author$project$Ball$updateBall, model.u, model.A, model.v, model.q);
 				var newBall = _n1.a;
 				var newStatus = _n1.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{C: newBall, q: newStatus}),
+						{u: newBall, q: newStatus}),
 					elm$core$Platform$Cmd$none);
 			default:
 				var event = msg.a;
-				var xPos = ((model.u.aB / (-2)) | 0) + elm$core$Basics$round(event.a2.a);
+				var xPos = ((model.v.aB / (-2)) | 0) + elm$core$Basics$round(event.a2.a);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							u: A2(author$project$Bouncer$updateBouncer, model.u, xPos)
+							v: A2(author$project$Bouncer$updateBouncer, model.v, xPos)
 						}),
 					elm$core$Platform$Cmd$none);
 		}
@@ -5873,8 +5878,8 @@ var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onWithOptions = F3(
 var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$stopOptions = {T: true, X: true};
 var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onMove = A2(mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onWithOptions, 'mousemove', mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$stopOptions);
 var author$project$Main$view = function (model) {
-	var widthString = elm$core$String$fromInt(model.z.aB);
-	var heightString = elm$core$String$fromInt(model.z.ae);
+	var widthString = elm$core$String$fromInt(model.A.aB);
+	var heightString = elm$core$String$fromInt(model.A.ae);
 	var svgViewBox = '0 0 ' + (widthString + (' ' + heightString));
 	return A2(
 		elm$html$Html$div,
@@ -5907,9 +5912,9 @@ var author$project$Main$view = function (model) {
 					]),
 				_List_fromArray(
 					[
-						author$project$Square$drawSquare(model.z),
-						author$project$Ball$drawBall(model.C),
-						author$project$Bouncer$drawBouncer(model.u)
+						author$project$Square$drawSquare(model.A),
+						author$project$Ball$drawBall(model.u),
+						author$project$Bouncer$drawBouncer(model.v)
 					])),
 				author$project$Main$drawPoints(model),
 				author$project$Main$drawStartString(model)
