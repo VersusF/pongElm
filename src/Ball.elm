@@ -1,12 +1,15 @@
 module Ball exposing
   (Ball
-  , startPosition
+  , randomBall
   , updateBall
   , drawBall
+  , startBall
+  , none
   )
 
 import Square exposing (Square)
 import Bouncer exposing (Bouncer)
+import PlayerStatus exposing (PlayerStatus)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 
@@ -17,23 +20,49 @@ type alias Ball =
   , speedY : Int
   }
 
-startPosition : Ball 
-startPosition =
-  Ball 200 300 3 3
+none : Ball
+none =
+  Ball 0 0 0 0
 
-updateBall : Ball -> Square -> Bouncer -> Ball
-updateBall ball square bouncer =
+randomBall : Int -> Ball
+randomBall x =
+  Ball x 0 0 0
+    |> startBall
+
+startBall : Ball -> Ball
+startBall ball = {ball | speedX = 3, speedY = 3}
+
+updateBall : Ball -> Square -> Bouncer -> PlayerStatus -> (Ball, PlayerStatus)
+updateBall ball square bouncer previousState =
   let
-    (newX, newSpeedX) = nextPositionAndSpeed ball.x ball.speedX 0 square.width
+    (newX, speedX) = nextPositionAndSpeed ball.x ball.speedX 0 square.width
     upperY =
-      if ball.x > bouncer.x && ball.x < (bouncer.x + bouncer.width) then
+      if ball.x >= bouncer.x 
+        && ball.x <= (bouncer.x + bouncer.width)
+        && ball.y <= bouncer.y 
+      then
         bouncer.y
       else
         square.height
-    (newY, newSpeedY) = nextPositionAndSpeed ball.y ball.speedY 0 upperY
+    (newY, speedY) = nextPositionAndSpeed ball.y ball.speedY 0 upperY
+    (newState, newSpeedX, newSpeedY) = 
+      if newY == square.height then
+        (PlayerStatus.gameOver, 0, 0)
+      else
+        (previousState, speedX, speedY)
+    (incX, incY) = 
+      if newY == bouncer.y then
+        (findIncrement newSpeedX, findIncrement newSpeedY)
+      else
+        (0, 0)
   in
-    Ball newX newY newSpeedX newSpeedY
+    (Ball newX newY (newSpeedX + incX) (newSpeedY + incY), newState)
     
+
+findIncrement : Int -> Int
+findIncrement n =
+  if n > 0 then 1 else -1
+
 
 nextPositionAndSpeed : Int -> Int -> Int -> Int -> (Int, Int)
 nextPositionAndSpeed pos speed lower upper =
@@ -43,7 +72,7 @@ nextPositionAndSpeed pos speed lower upper =
     if possiblePos < lower then
       (lower, negate speed)
     else if possiblePos > upper then
-      (upper, negate speed)
+      Debug.log "boing" (upper, negate speed)
     else
       (possiblePos, speed)
 

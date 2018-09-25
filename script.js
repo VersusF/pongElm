@@ -2344,6 +2344,43 @@ function _Time_getZoneName()
 
 
 
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+
+
+
 
 // HELPERS
 
@@ -4339,7 +4376,7 @@ var author$project$Ball$Ball = F4(
 	function (x, y, speedX, speedY) {
 		return {speedX: speedX, speedY: speedY, x: x, y: y};
 	});
-var author$project$Ball$startPosition = A4(author$project$Ball$Ball, 200, 300, 3, 3);
+var author$project$Ball$none = A4(author$project$Ball$Ball, 0, 0, 0, 0);
 var author$project$Bouncer$Bouncer = F4(
 	function (height, width, x, y) {
 		return {height: height, width: width, x: x, y: y};
@@ -4426,12 +4463,14 @@ var elm$core$Array$toList = function (array) {
 };
 var elm$core$Basics$idiv = _Basics_idiv;
 var author$project$Bouncer$initialBouncer = function (square) {
-	return A4(author$project$Bouncer$Bouncer, 5, 30, (square.width / 2) | 0, square.bouncerHeight);
+	return A4(author$project$Bouncer$Bouncer, 5, 50, (square.width / 2) | 0, square.bouncerHeight);
 };
-var author$project$Main$Model = F3(
-	function (ball, square, bouncer) {
-		return {ball: ball, bouncer: bouncer, square: square};
+var author$project$Main$Model = F4(
+	function (ball, square, bouncer, playerStatus) {
+		return {ball: ball, bouncer: bouncer, playerStatus: playerStatus, square: square};
 	});
+var author$project$PlayerStatus$NotYetStarted = {$: 'NotYetStarted'};
+var author$project$PlayerStatus$initialPlayerStatus = author$project$PlayerStatus$NotYetStarted;
 var author$project$Square$Square = F3(
 	function (width, height, bouncerHeight) {
 		return {bouncerHeight: bouncerHeight, height: height, width: width};
@@ -4836,11 +4875,12 @@ var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$init = function (_n0) {
 	var square = author$project$Square$initialSquare;
 	return _Utils_Tuple2(
-		A3(
+		A4(
 			author$project$Main$Model,
-			author$project$Ball$startPosition,
+			author$project$Ball$none,
 			square,
-			author$project$Bouncer$initialBouncer(square)),
+			author$project$Bouncer$initialBouncer(square),
+			author$project$PlayerStatus$initialPlayerStatus),
 		elm$core$Platform$Cmd$none);
 };
 var author$project$Main$UpdateBall = function (a) {
@@ -5360,7 +5400,7 @@ var elm$time$Time$every = F2(
 			A2(elm$time$Time$Every, interval, tagger));
 	});
 var author$project$Main$subscriptions = function (model) {
-	var framerate = 60;
+	var framerate = 30;
 	var refreshTimeMillis = 1000 / framerate;
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
@@ -5368,24 +5408,54 @@ var author$project$Main$subscriptions = function (model) {
 				A2(elm$time$Time$every, refreshTimeMillis, author$project$Main$UpdateBall)
 			]));
 };
+var author$project$Ball$startBall = function (ball) {
+	return _Utils_update(
+		ball,
+		{speedX: 3, speedY: 3});
+};
+var author$project$Ball$randomBall = function (x) {
+	return author$project$Ball$startBall(
+		A4(author$project$Ball$Ball, x, 0, 0, 0));
+};
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
+var author$project$Ball$findIncrement = function (n) {
+	return (n > 0) ? 1 : (-1);
+};
+var elm$core$Debug$log = _Debug_log;
 var author$project$Ball$nextPositionAndSpeed = F4(
 	function (pos, speed, lower, upper) {
 		var possiblePos = pos + speed;
-		return (_Utils_cmp(possiblePos, lower) < 0) ? _Utils_Tuple2(lower, -speed) : ((_Utils_cmp(possiblePos, upper) > 0) ? _Utils_Tuple2(upper, -speed) : _Utils_Tuple2(possiblePos, speed));
+		return (_Utils_cmp(possiblePos, lower) < 0) ? _Utils_Tuple2(lower, -speed) : ((_Utils_cmp(possiblePos, upper) > 0) ? A2(
+			elm$core$Debug$log,
+			'boing',
+			_Utils_Tuple2(upper, -speed)) : _Utils_Tuple2(possiblePos, speed));
 	});
-var author$project$Ball$updateBall = F3(
-	function (ball, square, bouncer) {
-		var upperY = ((_Utils_cmp(ball.x, bouncer.x) > 0) && (_Utils_cmp(ball.x, bouncer.x + bouncer.width) < 0)) ? bouncer.y : square.height;
+var author$project$PlayerStatus$GameOver = {$: 'GameOver'};
+var author$project$PlayerStatus$gameOver = author$project$PlayerStatus$GameOver;
+var elm$core$Basics$ge = _Utils_ge;
+var author$project$Ball$updateBall = F4(
+	function (ball, square, bouncer, previousState) {
+		var upperY = ((_Utils_cmp(ball.x, bouncer.x) > -1) && ((_Utils_cmp(ball.x, bouncer.x + bouncer.width) < 1) && (_Utils_cmp(ball.y, bouncer.y) < 1))) ? bouncer.y : square.height;
 		var _n0 = A4(author$project$Ball$nextPositionAndSpeed, ball.y, ball.speedY, 0, upperY);
 		var newY = _n0.a;
-		var newSpeedY = _n0.b;
+		var speedY = _n0.b;
 		var _n1 = A4(author$project$Ball$nextPositionAndSpeed, ball.x, ball.speedX, 0, square.width);
 		var newX = _n1.a;
-		var newSpeedX = _n1.b;
-		return A4(author$project$Ball$Ball, newX, newY, newSpeedX, newSpeedY);
+		var speedX = _n1.b;
+		var _n2 = _Utils_eq(newY, square.height) ? _Utils_Tuple3(author$project$PlayerStatus$gameOver, 0, 0) : _Utils_Tuple3(previousState, speedX, speedY);
+		var newState = _n2.a;
+		var newSpeedX = _n2.b;
+		var newSpeedY = _n2.c;
+		var _n3 = _Utils_eq(newY, bouncer.y) ? _Utils_Tuple2(
+			author$project$Ball$findIncrement(newSpeedX),
+			author$project$Ball$findIncrement(newSpeedY)) : _Utils_Tuple2(0, 0);
+		var incX = _n3.a;
+		var incY = _n3.b;
+		return _Utils_Tuple2(
+			A4(author$project$Ball$Ball, newX, newY, newSpeedX + incX, newSpeedY + incY),
+			newState);
 	});
 var author$project$Bouncer$updateBouncer = F2(
 	function (bouncer, newPosX) {
@@ -5393,19 +5463,171 @@ var author$project$Bouncer$updateBouncer = F2(
 			bouncer,
 			{x: newPosX});
 	});
+var author$project$Main$CreateBall = function (a) {
+	return {$: 'CreateBall', a: a};
+};
+var author$project$PlayerStatus$Playing = {$: 'Playing'};
+var author$project$PlayerStatus$startGame = author$project$PlayerStatus$Playing;
 var elm$core$Basics$round = _Basics_round;
+var elm$random$Random$Generate = function (a) {
+	return {$: 'Generate', a: a};
+};
+var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var elm$random$Random$Seed = F2(
+	function (a, b) {
+		return {$: 'Seed', a: a, b: b};
+	});
+var elm$random$Random$next = function (_n0) {
+	var state0 = _n0.a;
+	var incr = _n0.b;
+	return A2(elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
+};
+var elm$random$Random$initialSeed = function (x) {
+	var _n0 = elm$random$Random$next(
+		A2(elm$random$Random$Seed, 0, 1013904223));
+	var state1 = _n0.a;
+	var incr = _n0.b;
+	var state2 = (state1 + x) >>> 0;
+	return elm$random$Random$next(
+		A2(elm$random$Random$Seed, state2, incr));
+};
+var elm$time$Time$posixToMillis = function (_n0) {
+	var millis = _n0.a;
+	return millis;
+};
+var elm$random$Random$init = A2(
+	elm$core$Task$andThen,
+	function (time) {
+		return elm$core$Task$succeed(
+			elm$random$Random$initialSeed(
+				elm$time$Time$posixToMillis(time)));
+	},
+	elm$time$Time$now);
+var elm$random$Random$step = F2(
+	function (_n0, seed) {
+		var generator = _n0.a;
+		return generator(seed);
+	});
+var elm$random$Random$onEffects = F3(
+	function (router, commands, seed) {
+		if (!commands.b) {
+			return elm$core$Task$succeed(seed);
+		} else {
+			var generator = commands.a.a;
+			var rest = commands.b;
+			var _n1 = A2(elm$random$Random$step, generator, seed);
+			var value = _n1.a;
+			var newSeed = _n1.b;
+			return A2(
+				elm$core$Task$andThen,
+				function (_n2) {
+					return A3(elm$random$Random$onEffects, router, rest, newSeed);
+				},
+				A2(elm$core$Platform$sendToApp, router, value));
+		}
+	});
+var elm$random$Random$onSelfMsg = F3(
+	function (_n0, _n1, seed) {
+		return elm$core$Task$succeed(seed);
+	});
+var elm$random$Random$Generator = function (a) {
+	return {$: 'Generator', a: a};
+};
+var elm$random$Random$map = F2(
+	function (func, _n0) {
+		var genA = _n0.a;
+		return elm$random$Random$Generator(
+			function (seed0) {
+				var _n1 = genA(seed0);
+				var a = _n1.a;
+				var seed1 = _n1.b;
+				return _Utils_Tuple2(
+					func(a),
+					seed1);
+			});
+	});
+var elm$random$Random$cmdMap = F2(
+	function (func, _n0) {
+		var generator = _n0.a;
+		return elm$random$Random$Generate(
+			A2(elm$random$Random$map, func, generator));
+	});
+_Platform_effectManagers['Random'] = _Platform_createManager(elm$random$Random$init, elm$random$Random$onEffects, elm$random$Random$onSelfMsg, elm$random$Random$cmdMap);
+var elm$random$Random$command = _Platform_leaf('Random');
+var elm$random$Random$generate = F2(
+	function (tagger, generator) {
+		return elm$random$Random$command(
+			elm$random$Random$Generate(
+				A2(elm$random$Random$map, tagger, generator)));
+	});
+var elm$core$Bitwise$and = _Bitwise_and;
+var elm$core$Bitwise$xor = _Bitwise_xor;
+var elm$random$Random$peel = function (_n0) {
+	var state = _n0.a;
+	var word = (state ^ (state >>> ((state >>> 28) + 4))) * 277803737;
+	return ((word >>> 22) ^ word) >>> 0;
+};
+var elm$random$Random$int = F2(
+	function (a, b) {
+		return elm$random$Random$Generator(
+			function (seed0) {
+				var _n0 = (_Utils_cmp(a, b) < 0) ? _Utils_Tuple2(a, b) : _Utils_Tuple2(b, a);
+				var lo = _n0.a;
+				var hi = _n0.b;
+				var range = (hi - lo) + 1;
+				if (!((range - 1) & range)) {
+					return _Utils_Tuple2(
+						(((range - 1) & elm$random$Random$peel(seed0)) >>> 0) + lo,
+						elm$random$Random$next(seed0));
+				} else {
+					var threshhold = (((-range) >>> 0) % range) >>> 0;
+					var accountForBias = function (seed) {
+						accountForBias:
+						while (true) {
+							var x = elm$random$Random$peel(seed);
+							var seedN = elm$random$Random$next(seed);
+							if (_Utils_cmp(x, threshhold) < 0) {
+								var $temp$seed = seedN;
+								seed = $temp$seed;
+								continue accountForBias;
+							} else {
+								return _Utils_Tuple2((x % range) + lo, seedN);
+							}
+						}
+					};
+					return accountForBias(seed0);
+				}
+			});
+	});
 var author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'Init':
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			case 'UpdateBall':
+			case 'CreateBall':
+				var x = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							ball: A3(author$project$Ball$updateBall, model.ball, model.square, model.bouncer)
+							ball: author$project$Ball$randomBall(x)
 						}),
+					elm$core$Platform$Cmd$none);
+			case 'Start':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{playerStatus: author$project$PlayerStatus$startGame}),
+					A2(
+						elm$random$Random$generate,
+						author$project$Main$CreateBall,
+						A2(elm$random$Random$int, 0, model.square.width)));
+			case 'UpdateBall':
+				var _n1 = A4(author$project$Ball$updateBall, model.ball, model.square, model.bouncer, model.playerStatus);
+				var newBall = _n1.a;
+				var newStatus = _n1.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{ball: newBall, playerStatus: newStatus}),
 					elm$core$Platform$Cmd$none);
 			default:
 				var event = msg.a;
@@ -5475,8 +5697,27 @@ var author$project$Bouncer$drawBouncer = function (bouncer) {
 			]),
 		_List_Nil);
 };
+var author$project$Main$Start = {$: 'Start'};
 var author$project$Main$UpdateBouncer = function (a) {
 	return {$: 'UpdateBouncer', a: a};
+};
+var author$project$PlayerStatus$hasNotStart = function (playerStatus) {
+	return _Utils_eq(playerStatus, author$project$PlayerStatus$NotYetStarted);
+};
+var author$project$PlayerStatus$isGameOver = function (playerStatus) {
+	return _Utils_eq(playerStatus, author$project$PlayerStatus$GameOver);
+};
+var elm$html$Html$p = _VirtualDom_node('p');
+var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
+var author$project$Main$drawStartText = function (playerStatus) {
+	return (author$project$PlayerStatus$isGameOver(playerStatus) || author$project$PlayerStatus$hasNotStart(playerStatus)) ? A2(
+		elm$html$Html$p,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('Click anywhere to start')
+			])) : A2(elm$html$Html$p, _List_Nil, _List_Nil);
 };
 var author$project$Square$drawSquare = function (square) {
 	return A2(
@@ -5494,12 +5735,28 @@ var author$project$Square$drawSquare = function (square) {
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
+};
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var elm$virtual_dom$VirtualDom$Custom = function (a) {
 	return {$: 'Custom', a: a};
 };
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var elm$html$Html$Events$custom = F2(
 	function (event, decoder) {
 		return A2(
@@ -5623,15 +5880,18 @@ var author$project$Main$view = function (model) {
 					[
 						elm$svg$Svg$Attributes$width(widthString),
 						elm$svg$Svg$Attributes$height(heightString),
+						elm$svg$Svg$Attributes$style('cursor:none'),
 						elm$svg$Svg$Attributes$viewBox(svgViewBox),
-						mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onMove(author$project$Main$UpdateBouncer)
+						mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onMove(author$project$Main$UpdateBouncer),
+						elm$html$Html$Events$onClick(author$project$Main$Start)
 					]),
 				_List_fromArray(
 					[
 						author$project$Square$drawSquare(model.square),
 						author$project$Ball$drawBall(model.ball),
 						author$project$Bouncer$drawBouncer(model.bouncer)
-					]))
+					])),
+				author$project$Main$drawStartText(model.playerStatus)
 			]));
 };
 var elm$browser$Browser$External = function (a) {

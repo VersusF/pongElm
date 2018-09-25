@@ -19,7 +19,7 @@ type alias Bouncer =
 
 initialBouncer : Square -> Bouncer
 initialBouncer square =
-  Bouncer 5 30 (square.width // 2) square.bouncerHeight
+  Bouncer 5 50 (square.width // 2) square.bouncerHeight
 
 drawBouncer : Bouncer -> Svg a
 drawBouncer bouncer =
