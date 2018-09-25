@@ -72,7 +72,7 @@ nextPositionAndSpeed pos speed lower upper =
     if possiblePos < lower then
       (lower, negate speed)
     else if possiblePos > upper then
-      Debug.log "boing" (upper, negate speed)
+      (upper, negate speed)
     else
       (possiblePos, speed)
 

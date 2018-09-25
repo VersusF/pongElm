@@ -22,3 +22,6 @@ startGame = Playing
 
 isGameOver : PlayerStatus -> Bool
 isGameOver playerStatus = playerStatus == GameOver
+
+isPlaying : PlayerStatus -> Bool
+isPlaying playerStatus = playerStatus == Playing

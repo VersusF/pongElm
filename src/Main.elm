@@ -21,6 +21,7 @@ type alias Model =
   , square : Square
   , bouncer : Bouncer
   , playerStatus : PlayerStatus
+  , points : Int
   }
 
 main =
@@ -36,6 +37,7 @@ type Msg
   = CreateBall Int
   | UpdateBall Time.Posix
   | UpdateBouncer Mouse.Event
+  | IncrementPoints Time.Posix
   | Start
 
 
@@ -44,7 +46,7 @@ init () =
   let
     square = Square.initialSquare
   in
-    ( Model Ball.none square (Bouncer.initialBouncer square) PlayerStatus.initialPlayerStatus
+    ( Model Ball.none square (Bouncer.initialBouncer square) PlayerStatus.initialPlayerStatus 0
     , Cmd.none
     )
 
@@ -57,6 +59,7 @@ subscriptions model =
   in
   Sub.batch
     [ Time.every refreshTimeMillis UpdateBall
+    , Time.every 1000 IncrementPoints
     ]
 
 
@@ -70,8 +73,11 @@ view model =
     div 
     [ H.style "text-align" "center"
     , H.style "width" "100%"
+    , H.style "font-family" "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif"
+    , H.style "font-weight" "400"
     ]
-    [ svg 
+    [ h1 [] [H.text "Squash game"]
+    , svg 
         [ S.width widthString
         , S.height heightString
         , S.style "cursor:none"
@@ -83,7 +89,8 @@ view model =
         , Ball.drawBall model.ball
         , Bouncer.drawBouncer model.bouncer
         ]
-    , drawStartText model.playerStatus
+    , drawPoints model
+    , drawStartString model
     ]
 
 
@@ -96,9 +103,18 @@ update msg model =
       )
 
     Start ->
-      ( {model | playerStatus = PlayerStatus.startGame}
+      ( {model 
+          | playerStatus = PlayerStatus.startGame
+          , points = 0
+        }
       , Random.generate CreateBall (Random.int 0 model.square.width)
       )
+
+    IncrementPoints _ ->
+      if PlayerStatus.isPlaying model.playerStatus then
+        ({model | points = model.points + 1}, Cmd.none)
+      else
+        (model, Cmd.none)
 
     UpdateBall _ ->
       let
@@ -118,9 +134,19 @@ update msg model =
         , Cmd.none
         )
 
-drawStartText : PlayerStatus -> Html Msg
-drawStartText playerStatus =
-  if PlayerStatus.isGameOver playerStatus || PlayerStatus.hasNotStart playerStatus then
+drawPoints : Model -> Html Msg
+drawPoints model =
+  let
+    pointString = String.fromInt model.points
+  in
+    p [] [H.text ("Points: " ++ pointString)]
+
+drawStartString : Model -> Html Msg
+drawStartString model =
+  if 
+    PlayerStatus.isGameOver model.playerStatus 
+    || PlayerStatus.hasNotStart model.playerStatus 
+  then
     p [] [H.text "Click anywhere to start"]
   else
     p [] []
