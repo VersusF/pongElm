@@ -1,6 +1,7 @@
 module Main exposing (Model, Msg(..), main)
 
 import Browser
+import Browser.Events
 import Html as H exposing (..)
 import Html.Attributes as H exposing (..)
 import Html.Events as H exposing (..)
@@ -58,7 +59,7 @@ subscriptions model =
     refreshTimeMillis = 1000 / framerate
   in
   Sub.batch
-    [ Time.every refreshTimeMillis UpdateBall
+    [ Browser.Events.onAnimationFrame UpdateBall
     , Time.every 1000 IncrementPoints
     ]
 
