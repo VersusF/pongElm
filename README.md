@@ -1,2 +1,2 @@
-# pongElm
-Simple implementation of Pong game written in Elm
+# squashElm
+Simple implementation of a squash game written in Elm
